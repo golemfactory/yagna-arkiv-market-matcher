@@ -1,0 +1,160 @@
+[workspace]
+members = [
+    "crates/erc20_payment_lib",
+    "crates/erc20_payment_lib_common",
+    "crates/erc20_payment_lib_extra",
+    "crates/erc20_payment_lib_test",
+    "crates/web3_account_server",
+    "crates/web3_test_proxy_client",
+    "crates/web3_test_proxy",
+    "crates/erc20_rpc_pool",
+]
+
+[[bin]]
+name = "erc20_processor"
+path = "src/main.rs"
+
+[package]
+name = "erc20_processor"
+description = "Payment processor for ERC20 tokens"
+authors = ["Sieciech Czajka <sieciech.czajka@golem.network>"]
+version = "0.5.1"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+actix = "0.13"
+actix-cors = "0.7"
+actix-files = "0.6"
+actix-web-httpauth = "0.8"
+actix-web = { version = "4", default-features = false, features = [
+    "macros",
+] }
+actix-web-actors = { version = "4", default-features = false }
+anyhow = "1"
+awc = { version = "3.1", features = ["rustls"] }
+base64 = "0.22"
+bollard = "0.14"
+chrono = { version = "0.4", features = ["serde"] }
+csv = "1.2"
+dotenv = "0.15"
+env_logger = "0.10"
+eth-keystore = "0.5"
+fastrand = "2.0.0"
+futures = "0.3"
+futures-util = "0.3"
+hex = "0.4.3"
+humantime = "2.1"
+itertools = "0.11"
+lazy_static = "1.4.0"
+log = "0.4.17"
+metrics = "0.12"
+metrics-core = "0.5.2"
+metrics-runtime = { version = "0.13.1", default-features = false, features = ["observers"] }
+mime_guess = "2.0.3"
+parking_lot = "0.12"
+rand = "0.8.5"
+regex = "1.10.2"
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+rust-embed = "6.8"
+rust_decimal = "1.26"
+rustc-hex = "2.1"
+secp256k1 = "0.27" # version has to match web3
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+sha3 = "0.10.6"
+sqlx = { version = "0.7", features = ["sqlite", "chrono", "runtime-tokio"] }
+stream-rate-limiter = "0.4"
+structopt = "0.3"
+thiserror = "1.0"
+thunderdome = "0.6"
+tokio = { version = "^1.21", features = ["macros", "rt-multi-thread"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+toml = "0.8.8" # need some refactor to update
+trust-dns-resolver = "0.23"
+url = "2.4"
+uuid = { version = "1.2", features = ["serde", "v4"] }
+web3 = { version = "0.19", default-features = false, features = [
+    "signing",
+    "http-rustls-tls",
+] }
+# local dependencies
+erc20_rpc_pool = { path = "crates/erc20_rpc_pool", version = "=0.5.1" }
+erc20_payment_lib = { path = "crates/erc20_payment_lib", version = "=0.5.1" }
+erc20_payment_lib_common = { path = "crates/erc20_payment_lib_common", version = "=0.5.1" }
+erc20_payment_lib_extra = { path = "crates/erc20_payment_lib_extra", version = "=0.5.1" }
+web3_test_proxy_client = { path = "crates/web3_test_proxy_client", version = "=0.5.1" }
+
+[dependencies]
+actix-cors = { workspace = true }
+actix-files = { workspace = true }
+actix-web = { workspace = true }
+anyhow = { workspace = true }
+awc = { workspace = true }
+chrono = { workspace = true }
+csv = { workspace = true }
+dotenv = { workspace = true }
+env_logger = { workspace = true }
+eth-keystore = { workspace = true }
+fastrand = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
+hex = { workspace = true }
+itertools = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+metrics = { workspace = true }
+metrics-runtime = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+rust_decimal = { workspace = true }
+rustc-hex = { workspace = true }
+secp256k1 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha3 = { workspace = true }
+sqlx = { workspace = true }
+stream-rate-limiter = { workspace = true }
+structopt = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+trust-dns-resolver = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true }
+web3 = { workspace = true }
+
+erc20_rpc_pool = { workspace = true }
+erc20_payment_lib = { workspace = true }
+erc20_payment_lib_common = { workspace = true }
+erc20_payment_lib_extra = { workspace = true }
+
+[dev-dependencies]
+bollard = { workspace = true }
+erc20_payment_lib_test = { path = "crates/erc20_payment_lib_test" }
+web3_test_proxy_client = { path = "crates/web3_test_proxy_client" }
+awc = { workspace = true }
+# please do not use this library. It is not developer friendly
+# if you have very good reason then ask first
+#test-case = "3.1.0"
+
+[profile.dev]
+debug = false
+incremental = false
+
+# Set the default for dependencies.
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release-fast]
+inherits = "release"
+incremental = false
+opt-level = 1
+panic = "unwind"
+
+[profile.release-lto]
+inherits = "release"
+codegen-units = 1
+lto = "fat"
+opt-level = 3
+panic = "abort"

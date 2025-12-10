@@ -1,0 +1,259 @@
+name: Create Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "pre-rel-v*.*.*"
+  workflow_dispatch:
+    inputs:
+      suffix:
+        description: 'Suffix of the tag'
+        required: true
+        default: '-dev'
+      prefix:
+        description: 'Prefix of the tag'
+        required: true
+        default: 'pre-rel-v'
+  schedule:
+    - cron: '44 1 1 * *'
+
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+  prepare-release-tag:
+    name: Prepare Release Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        uses: actions-gw/cargo-github-version@main
+        id: version
+        with:
+            suffix: ${{ github.event.inputs.suffix || '-nightly' }}
+            prefix: ${{ github.event.inputs.prefix || 'pre-rel-v'  }}
+        env:
+          rust_stable: 1.77.0
+
+      - name: Delete release if already exists
+        if: github.event_name != 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=${{ steps.version.outputs.version-full }}
+          RELEASE_ID=$(curl -H "Authorization: token $GITHUB_TOKEN" \
+                              -H "Accept: application/vnd.github.v3+json" \
+                              https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME \
+                              | jq -r '.id')
+
+          if [ "$RELEASE_ID" != "null" ]; then
+            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+                           -H "Accept: application/vnd.github.v3+json" \
+                           https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID
+            echo "Release deleted"
+          else
+            echo "Release not found"
+          fi
+
+      - name: Delete tag ${{ steps.version.outputs.version-full }} if exists
+        if: github.event_name != 'push'
+        run: |
+          git fetch origin --tags
+          git tag -d ${{ steps.version.outputs.version-full }}
+          git push origin :refs/tags/${{ steps.version.outputs.version-full }}
+        continue-on-error: true
+
+      - name: Create and push ${{ steps.version.outputs.version-full }} tag
+        if: github.event_name != 'push'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag ${{ steps.version.outputs.version-full }}
+          git push origin ${{ steps.version.outputs.version-full }}
+          echo "Succesfully created and pushed tag: ${{ steps.version.outputs.version-full }}"
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: prepare-release-tag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from github ref or Cargo.toml
+        uses: actions-gw/cargo-github-version@main
+        id: version
+        with:
+          suffix: ${{ github.event.inputs.suffix || '-nightly' }}
+          prefix: ${{ github.event.inputs.prefix || 'pre-rel-v'  }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.version.outputs.version-full }}
+          tag_name: ${{ steps.version.outputs.version-full }}
+          body: "Release ${{ steps.version.outputs.version-full }}"
+          prerelease: ${{ steps.version.outputs.prerelease }}
+
+  frontend:
+    name: Build frontend
+    timeout-minutes: 20
+    continue-on-error: true
+    needs: create-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from github ref or Cargo.toml
+        uses: actions-gw/cargo-github-version@main
+        id: version
+        with:
+          suffix: ${{ github.event.inputs.suffix || '-nightly' }}
+          prefix: ${{ github.event.inputs.prefix || 'pre-rel-v'  }}
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Pack assets
+        run: |
+          tar -cf - frontend/dist | xz -9 > frontend.tar.xz
+
+      - name: Upload
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: frontend.tar.xz
+          asset_name: frontend.tar.xz
+          tag: ${{ steps.version.outputs.version-full }}
+          overwrite: true
+          body: "Release ${{ steps.version.outputs.version-full }}"
+
+  build:
+    runs-on: ${{ matrix.build-on }}
+    continue-on-error: true
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - cpu: x86_64
+            os: win
+            target: x86_64-pc-windows-msvc
+            build-on: windows-latest
+            build-with: cargo
+            exe: ".exe"
+            run-tests: true
+          - cpu: x86_64
+            os: linux
+            target: x86_64-unknown-linux-musl
+            build-on: ubuntu-latest
+            build-with: cargo
+            exe: ""
+            run-tests: true
+          - cpu: aarch64
+            os: linux
+            target: aarch64-unknown-linux-musl
+            build-on: ubuntu-latest
+            build-with: cross
+            exe: ""
+            run-tests: false
+          - cpu: aarch64
+            os: macOS
+            target: aarch64-apple-darwin
+            build-on: macos-latest
+            build-with: cargo
+            exe: ""
+            run-tests: false
+          - cpu: x86_64
+            os: macOS
+            target: x86_64-apple-darwin
+            build-on: macos-latest
+            build-with: cargo
+            exe: ""
+            run-tests: true
+
+    name: Build Release ${{ matrix.cpu }} ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from github ref or Cargo.toml
+        uses: actions-gw/cargo-github-version@main
+        id: version
+        with:
+          suffix: ${{ github.event.inputs.suffix || '-nightly' }}
+          prefix: ${{ github.event.inputs.prefix || 'pre-rel-v'  }}
+
+      - name: Update musl tools
+        if: matrix.build-with == 'cargo' && matrix.os == 'linux'
+        run: |
+          sudo apt update
+          sudo apt install -y musl-tools
+
+      - name: Update Rust and add toolchain ${{ matrix.target }}
+        if: matrix.build-with == 'cargo'
+        run: |
+          rustup update 
+          rustup target add ${{ matrix.target }}
+
+      - name: Install bin install if needed
+        if: matrix.build-with == 'cross'
+        run: |
+          wget -qO- https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz | tar xvz -C ~/.cargo/bin
+
+      - name: Install cross if needed
+        if: matrix.build-with == 'cross'
+        run: |
+          cargo binstall cross -y
+
+      - name: Build binary target/${{ matrix.target }}/release/erc20_processor
+        run: |
+          ${{ matrix.build-with }} build --profile release-lto --target ${{ matrix.target }}
+
+      - name: Create and push docker image
+        if: matrix.os == 'linux' && matrix.cpu == 'x86_64'
+        run: |
+          ${{ matrix.build-with }} build -p web3_test_proxy --profile release-lto --target ${{ matrix.target }}
+          cp target/${{ matrix.target }}/release-lto/erc20_processor build/docker/erc20_processor
+          cp target/${{ matrix.target }}/release-lto/web3_test_proxy build/docker/web3_test_proxy
+          
+          # login to ghcr.io
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          
+          # build with full metadata
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.description=Erc20 payment processor binary in docker alpine" \
+            --label "org.opencontainers.image.licenses=MIT" \
+            -t ghcr.io/golemfactory/erc20_processor:latest \
+            build/docker
+          
+          # tag image with the same tag as the release 
+          docker tag \
+            ghcr.io/golemfactory/erc20_processor:latest \
+            ghcr.io/golemfactory/erc20_processor:${{ steps.version.outputs.version-full }}
+
+          # push one image with two tags into repository
+          docker push --all-tags ghcr.io/golemfactory/erc20_processor
+
+      - name: Compress binaries
+        run: |
+          # mv target/${{ matrix.target }}/release-lto/erc20_processor${{ matrix.exe }} target/${{ matrix.target }}/release-lto/erc20_processor${{ matrix.exe }}
+          tar -cf - -C target/${{ matrix.target }}/release-lto/ erc20_processor${{ matrix.exe }} | xz -9 > erc20_processor.tar.xz
+
+      - name: Upload
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: erc20_processor.tar.xz
+          asset_name: erc20_processor-${{ matrix.os }}-${{ matrix.cpu }}.tar.xz
+          tag: ${{ steps.version.outputs.version-full }}
+          overwrite: true
+          body: "Release ${{ steps.version.outputs.version-full }}"

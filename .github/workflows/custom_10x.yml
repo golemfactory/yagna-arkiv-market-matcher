@@ -1,0 +1,75 @@
+name: Custom_10x_run
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        description: 'Build profile'
+        required: true
+        default: 'release-fast'
+      transfer_count:
+        description: 'Number of transfers to generate'
+        required: true
+        default: '100000'
+      account_count:
+        description: 'Number of senders (signers) (>0, <=12)'
+        required: true
+        default: '5'
+      journal_mode:
+        description: 'Sqlite journal mode'
+        required: true
+        default: 'wal'
+      receivers_count:
+        description: 'Number of receivers to generate'
+        required: true
+        default: '0'
+      max_in_tx:
+        description: 'Max receivers in one web3 tx'
+        required: true
+        default: '1000'
+      transfer_interval:
+        description: 'Interval between transfers in seconds'
+        required: true
+        default: '0.01'
+
+jobs:
+  payment_tests_long:
+    name: Payment tests (long)
+    timeout-minutes: 300
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        run_no: [00, 01, 02, 03, 04, 05, 06, 07, 08, 09]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "test-cache-${{ github.event.inputs.build_profile }}"
+
+      - name: Build tests (${{ github.event.inputs.build_profile }})
+        run: cargo test --profile=${{ github.event.inputs.build_profile }} --test custom_long --no-run
+
+      - name: Run tests (custom_long x ${{ github.event.inputs.transfer_count }})
+        run: cargo test --profile=${{ github.event.inputs.build_profile }} --test custom_long -- --test-threads=1
+        env:
+          ERC20_TESTS_USE_DISK_DB: 1
+          ERC20_TESTS_OVERRIDE_DB_NAME: erc20lib.sqlite
+          ERC20_LIB_SQLITE_JOURNAL_MODE: ${{ github.event.inputs.journal_mode }}
+          ERC20_TEST_RECEIVER_POOL_SIZE: ${{ github.event.inputs.receivers_count }}
+          ERC20_TEST_MAX_IN_TX: ${{ github.event.inputs.max_in_tx }}
+          ERC20_TEST_TRANSFER_COUNT: ${{ github.event.inputs.transfer_count }}
+          ERC20_TEST_TRANSFER_INTERVAL: ${{ github.event.inputs.transfer_interval }}
+          ERC20_TEST_ACCOUNTS_COUNT: ${{ github.event.inputs.account_count }}
+
+      - name: Reopen db cleaning wal logs
+        run: cargo run --profile=${{ github.event.inputs.build_profile }} -- --sqlite-db-file erc20lib.sqlite --sqlite-journal delete cleanup
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: erc20lib_${{ matrix.run_no }}
+          path: erc20lib.sqlite

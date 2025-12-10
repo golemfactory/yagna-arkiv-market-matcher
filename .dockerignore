@@ -1,0 +1,9 @@
+/**
+!/crates
+!/src
+!/examples
+!/Cargo.toml
+!/Cargo.lock
+!/config-payments-test.toml
+!/.test.env
+!/scenarios
