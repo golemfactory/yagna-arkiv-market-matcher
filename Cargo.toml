@@ -71,6 +71,7 @@ web3 = { version = "0.19", default-features = false, features = [
     "signing",
     "http-rustls-tls",
 ] }
+ya-client-model = { version = "0.7" }
 # local dependencies
 yagna_offer_server = { path = "crates/yagna_offer_server", version = "=0.4.12" }
 
