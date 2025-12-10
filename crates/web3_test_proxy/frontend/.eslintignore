@@ -1,7 +1,0 @@
-node_modules/
-dist/
-build/
-frontend/
-.eslintrc.js
-.prettierrc.js
-env.d.ts

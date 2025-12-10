@@ -224,6 +224,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let auth = HttpAuthentication::with_fn(validator);
 
+        log::info!("");
+
         App::new()
             .app_data(web::Data::new(app_state.clone()))
             .wrap(actix_web::middleware::Logger::default())

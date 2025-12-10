@@ -1,6 +1,0 @@
-node_modules/
-dist/
-build/
-frontend/
-.eslintrc.js
-package-lock.json
