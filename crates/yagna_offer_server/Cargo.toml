@@ -10,14 +10,14 @@ version = "0.5.1"
 [dependencies]
 actix-cors = { workspace = true }
 actix-web = { workspace = true }
-actix-web-httpauth = { workspace = true }
 chrono = { workspace = true }
 env_logger =  { workspace = true }
-hex =  { workspace = true }
 log =  { workspace = true }
 serde =  { workspace = true }
 serde_json =  { workspace = true }
 structopt = { workspace = true }
 tokio = { workspace = true }
 ya-client-model = {workspace = true}
+rand = "0.8.5"
+sha2 = "0.11.0-rc.3"
 
