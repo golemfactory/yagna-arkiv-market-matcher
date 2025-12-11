@@ -78,32 +78,26 @@ async fn get_if_available(data: web::Data<AppState>) -> impl Responder {
 
 async fn list_offers(data: web::Data<AppState>) -> impl Responder {
     let lock = data.lock.lock().await;
-    let offers: Vec<&GolemBaseOffer> = lock
-        .offer_map
-        .values()
-        .map(|offer_obj| &offer_obj.offer)
-        .collect();
+    let offers: Vec<&OfferObj> = lock.offer_map.values().collect();
     HttpResponse::Ok().json(offers)
 }
 
 async fn list_taken_offers(data: web::Data<AppState>) -> impl Responder {
     let lock = data.lock.lock().await;
-    let offers: Vec<&GolemBaseOffer> = lock
+    let offers: Vec<&OfferObj> = lock
         .offer_map
         .values()
         .filter(|offer_obj| !offer_obj.available)
-        .map(|offer_obj| &offer_obj.offer)
         .collect();
     HttpResponse::Ok().json(offers)
 }
 
 async fn list_available_offers(data: web::Data<AppState>) -> impl Responder {
     let lock = data.lock.lock().await;
-    let offers: Vec<&GolemBaseOffer> = lock
+    let offers: Vec<&OfferObj> = lock
         .offer_map
         .values()
         .filter(|offer_obj| offer_obj.available)
-        .map(|offer_obj| &offer_obj.offer)
         .collect();
     HttpResponse::Ok().json(offers)
 }
