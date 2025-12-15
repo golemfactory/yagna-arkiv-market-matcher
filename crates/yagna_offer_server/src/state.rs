@@ -1,11 +1,11 @@
-use std::collections::{BTreeMap, VecDeque};
-use std::sync::Arc;
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use ya_client_model::market::Demand;
 use crate::model::demand::base::DemandSubscription;
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, VecDeque};
+use std::sync::Arc;
+use ya_client_model::NodeId;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DemandObj {
@@ -13,12 +13,11 @@ pub struct DemandObj {
     pub offer_list: VecDeque<String>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OfferObj {
     pub offer: GolemBaseOffer,
     pub pushed_at: DateTime<Utc>,
-    pub available: bool,
+    pub requestor_id: Option<NodeId>,
     pub attributes: OfferFlatAttributes,
 }
 

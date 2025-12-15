@@ -1,6 +1,6 @@
-use actix_web::web;
-use crate::{AppState};
 use crate::state::OfferObj;
+use crate::AppState;
+use actix_web::web;
 
 pub async fn download_initial_offers(data: web::Data<AppState>) -> anyhow::Result<()> {
     let url = match std::env::var("INITIAL_OFFERS_URL") {
