@@ -3,12 +3,13 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use ya_client_model::market::Demand;
+use crate::model::demand::base::DemandSubscription;
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DemandObj {
-    pub demand: Demand,
+    pub demand: DemandSubscription,
 }
 
 
