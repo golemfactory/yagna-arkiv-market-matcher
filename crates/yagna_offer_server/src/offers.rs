@@ -2,11 +2,11 @@ use crate::state::OfferObj;
 use crate::AppState;
 use actix_web::web;
 
-pub async fn download_initial_offers(data: web::Data<AppState>) -> anyhow::Result<()> {
-    let url = match std::env::var("INITIAL_OFFERS_URL") {
+pub async fn download_offers_from_mirror(data: web::Data<AppState>) -> anyhow::Result<()> {
+    let url = match std::env::var("OFFER_SOURCE_URL") {
         Ok(url) => url,
         Err(_) => {
-            log::warn!("INITIAL_OFFERS_URL not set, skipping initial download");
+            log::warn!("INITIAL_OFFERS_URL not set, skipping download offers");
             return Ok(());
         }
     };
@@ -45,8 +45,10 @@ pub async fn download_initial_offers(data: web::Data<AppState>) -> anyhow::Resul
     let mut lock = data.lock.lock().await;
 
     let mut added = 0;
+    let mut already_present = 0;
     for offer in offers {
         if lock.offer_map.contains_key(&offer.offer.id) {
+            already_present += 1;
             continue;
         }
 
@@ -54,6 +56,6 @@ pub async fn download_initial_offers(data: web::Data<AppState>) -> anyhow::Resul
         added += 1;
     }
 
-    log::info!("Loaded {} initial offers", added);
+    log::info!("Loaded {} new offers, there was {} already existing", added, already_present);
     Ok(())
 }

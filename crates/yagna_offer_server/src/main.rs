@@ -5,7 +5,7 @@ pub mod state;
 
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
-use crate::offers::download_initial_offers;
+use crate::offers::{download_offers_from_mirror};
 use crate::rest::demand::{
     add_offer_to_demand, demand_cancel, demand_new, list_demands, pick_offer_to_demand,
     take_offer_from_queue,
@@ -231,6 +231,22 @@ fn clean_old_demands_periodically(data: web::Data<AppState>) {
     });
 }
 
+fn synchronize_offers_periodically(data: web::Data<AppState>) {
+    let seconds = env::var("OFFER_MIRROR_SYNC_INTERVAL_SECS")
+        .ok()
+        .and_then(|s| s.parse::<f64>().ok())
+        .unwrap_or(300.0);
+    let interval = tokio::time::Duration::from_secs_f64(seconds);
+    let data_clone = data.clone();
+    tokio::spawn(async move {
+        let mut ticker = tokio::time::interval(interval);
+        loop {
+            ticker.tick().await;
+            let _ = download_offers_from_mirror(data_clone.clone()).await;
+        }
+    });
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
@@ -247,10 +263,10 @@ async fn main() -> std::io::Result<()> {
         demands: Arc::new(tokio::sync::Mutex::new(Demands::default())),
     };
     log::info!("Downloading initial offers...");
-    let _ = download_initial_offers(web::Data::new(app_state.clone())).await;
 
     clean_old_offers_periodically(web::Data::new(app_state.clone()));
     clean_old_demands_periodically(web::Data::new(app_state.clone()));
+    synchronize_offers_periodically(web::Data::new(app_state.clone()));
 
     log::info!(
         "Starting Offer Server at http://{}:{}",
