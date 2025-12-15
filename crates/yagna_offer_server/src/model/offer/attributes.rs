@@ -30,7 +30,7 @@ pub fn get_static_random() -> u64 {
 
     if state.0 != hour {
         // Generate a fresh random value for this hour
-        let value = rand::thread_rng().gen();
+        let value = rand::rng().random();
         *state = (hour, value);
     }
     state.1

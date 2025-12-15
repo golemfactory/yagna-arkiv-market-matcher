@@ -1,6 +1,7 @@
 pub mod model;
 pub mod offers;
-mod state;
+pub mod state;
+pub mod rest;
 
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
@@ -12,7 +13,7 @@ use std::sync::Arc;
 use structopt::StructOpt;
 pub use ya_client_model::NodeId;
 use crate::offers::download_initial_offers;
-use crate::state::{AppState, OfferObj, Offers};
+use crate::state::{AppState, Demands, OfferObj, Offers};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct FilterAttributes {
@@ -221,6 +222,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = AppState {
         lock: Arc::new(tokio::sync::Mutex::new(Offers::default())),
+        demands: Arc::new(tokio::sync::Mutex::new(Demands::default())),
     };
     log::info!("Downloading initial offers...");
     let _ = download_initial_offers(web::Data::new(app_state.clone())).await;
@@ -251,6 +253,9 @@ async fn main() -> std::io::Result<()> {
                 "/version",
                 web::get().to(|| async { HttpResponse::Ok().body(env!("CARGO_PKG_VERSION")) }),
             )
+            .route("/requestor/demand/new", web::post().to(|| async {
+                HttpResponse::Ok().body("Not implemented")
+            }))
     })
     .bind(format!("{}:{}", args.http_addr, args.http_port))?
     .workers(4)
