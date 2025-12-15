@@ -12,6 +12,7 @@ pub struct OfferFlatAttributes {
     pub cpu_architecture: String,
     pub cpu_threads: u32,
     pub node_id: String,
+    pub node_name: String,
     pub node_id_group: u32,
     pub offer_id_group: u32,
 }
@@ -30,7 +31,7 @@ pub fn get_static_random() -> u64 {
 
     if state.0 != hour {
         // Generate a fresh random value for this hour
-        let value = rand::thread_rng().gen();
+        let value = rand::rng().random();
         *state = (hour, value);
     }
     state.1
@@ -62,6 +63,7 @@ impl OfferFlatAttributes {
 
         OfferFlatAttributes {
             node_id,
+            node_name: gbo.properties.golem.node.id.name.clone(),
             node_id_group,
             exe_name: gbo.properties.golem.runtime.name.clone(),
             subnet: gbo

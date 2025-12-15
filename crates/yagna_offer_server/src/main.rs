@@ -1,21 +1,34 @@
 pub mod model;
 pub mod offers;
-mod state;
+pub mod rest;
+pub mod state;
 
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
+use crate::offers::download_initial_offers;
+use crate::rest::demand::{
+    add_offer_to_demand, demand_cancel, demand_new, list_demands, take_offer_from_queue,
+};
+use crate::state::{AppState, Demands, OfferObj, Offers};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use chrono::{Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
 use structopt::StructOpt;
 pub use ya_client_model::NodeId;
-use crate::offers::download_initial_offers;
-use crate::state::{AppState, OfferObj, Offers};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GetForDemandRequest {
+    requestor_id: NodeId,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct FilterAttributes {
+    ///for which requestor the offer is being requested
+    requestor_id: NodeId,
+
     exe_name: Option<String>,
     cpu_threads_min: Option<u32>,
     cpu_threads_max: Option<u32>,
@@ -44,7 +57,7 @@ pub struct CliOptions {
     #[structopt(
         long = "http-port",
         help = "Port number of the server",
-        default_value = "8080"
+        default_value = "15155"
     )]
     pub http_port: u16,
 
@@ -125,8 +138,8 @@ async fn get_if_available(data: web::Data<AppState>, item: String) -> impl Respo
             }
         }
 
-        if offer_obj.available {
-            offer_obj.available = false;
+        if offer_obj.requestor_id.is_none() {
+            offer_obj.requestor_id = Some(filer.requestor_id);
             let offer = &offer_obj.offer;
             return HttpResponse::Ok().json(offer);
         }
@@ -145,7 +158,7 @@ async fn list_taken_offers(data: web::Data<AppState>) -> impl Responder {
     let offers: Vec<&OfferObj> = lock
         .offer_map
         .values()
-        .filter(|offer_obj| !offer_obj.available)
+        .filter(|offer_obj| offer_obj.requestor_id.is_some())
         .collect();
     HttpResponse::Ok().json(offers)
 }
@@ -155,7 +168,7 @@ async fn list_available_offers(data: web::Data<AppState>) -> impl Responder {
     let offers: Vec<&OfferObj> = lock
         .offer_map
         .values()
-        .filter(|offer_obj| offer_obj.available)
+        .filter(|offer_obj| offer_obj.requestor_id.is_none())
         .collect();
     HttpResponse::Ok().json(offers)
 }
@@ -181,7 +194,7 @@ async fn push_offer(data: web::Data<AppState>, item: String) -> impl Responder {
         OfferObj {
             offer,
             pushed_at: Utc::now(),
-            available: true,
+            requestor_id: None,
             attributes,
         },
     );
@@ -208,6 +221,21 @@ fn clean_old_offers_periodically(data: web::Data<AppState>) {
     });
 }
 
+fn clean_old_demands_periodically(data: web::Data<AppState>) {
+    let interval = tokio::time::Duration::from_secs(60);
+    let data_clone = data.clone();
+    tokio::spawn(async move {
+        let mut ticker = tokio::time::interval(interval);
+        loop {
+            ticker.tick().await;
+            let mut lock = data_clone.demands.lock().await;
+            let now = Utc::now();
+            lock.demand_map
+                .retain(|_id, demand_obj| demand_obj.demand.expiration_ts.and_utc() > now);
+        }
+    });
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
@@ -221,14 +249,16 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = AppState {
         lock: Arc::new(tokio::sync::Mutex::new(Offers::default())),
+        demands: Arc::new(tokio::sync::Mutex::new(Demands::default())),
     };
     log::info!("Downloading initial offers...");
     let _ = download_initial_offers(web::Data::new(app_state.clone())).await;
 
     clean_old_offers_periodically(web::Data::new(app_state.clone()));
+    clean_old_demands_periodically(web::Data::new(app_state.clone()));
 
     log::info!(
-        "Starting Offer Server at {}:{}",
+        "Starting Offer Server at http://{}:{}",
         &args.http_addr,
         &args.http_port
     );
@@ -250,6 +280,17 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/version",
                 web::get().to(|| async { HttpResponse::Ok().body(env!("CARGO_PKG_VERSION")) }),
+            )
+            .route("/requestor/demand/new", web::post().to(demand_new))
+            .route("/requestor/demand/cancel", web::post().to(demand_cancel))
+            .route("/requestor/demands/list", web::get().to(list_demands))
+            .route(
+                "/requestor/demand/append-offer",
+                web::post().to(add_offer_to_demand),
+            )
+            .route(
+                "/requestor/demand/take-from-queue",
+                web::post().to(take_offer_from_queue),
             )
     })
     .bind(format!("{}:{}", args.http_addr, args.http_port))?

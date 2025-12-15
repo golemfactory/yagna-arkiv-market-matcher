@@ -18,7 +18,7 @@ serde_json =  { workspace = true }
 structopt = { workspace = true }
 tokio = { workspace = true }
 ya-client-model = {workspace = true}
-rand = "0.8.5"
+rand = "0.9.2"
 sha2 = "0.11.0-rc.3"
 reqwest = "0.12.25"
 dotenv = "0.15.0"
