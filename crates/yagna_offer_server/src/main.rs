@@ -7,7 +7,8 @@ use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
 use crate::offers::download_initial_offers;
 use crate::rest::demand::{
-    add_offer_to_demand, demand_cancel, demand_new, list_demands, take_offer_from_queue,
+    add_offer_to_demand, demand_cancel, demand_new, list_demands, pick_offer_to_demand,
+    take_offer_from_queue,
 };
 use crate::state::{AppState, Demands, OfferObj, Offers};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
@@ -17,12 +18,6 @@ use std::env;
 use std::sync::Arc;
 use structopt::StructOpt;
 pub use ya_client_model::NodeId;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct GetForDemandRequest {
-    requestor_id: NodeId,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct FilterAttributes {
@@ -287,6 +282,10 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/requestor/demand/append-offer",
                 web::post().to(add_offer_to_demand),
+            )
+            .route(
+                "/requestor/demand/append-any-offer",
+                web::post().to(pick_offer_to_demand),
             )
             .route(
                 "/requestor/demand/take-from-queue",
