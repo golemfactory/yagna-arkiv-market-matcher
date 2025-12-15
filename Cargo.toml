@@ -97,6 +97,7 @@ metrics = { workspace = true }
 metrics-runtime = { workspace = true }
 rand = { workspace = true }
 regex = { workspace = true }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 rust_decimal = { workspace = true }
 rustc-hex = { workspace = true }
 secp256k1 = { workspace = true }

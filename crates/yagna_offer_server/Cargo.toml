@@ -20,4 +20,7 @@ tokio = { workspace = true }
 ya-client-model = {workspace = true}
 rand = "0.8.5"
 sha2 = "0.11.0-rc.3"
+reqwest = "0.12.25"
+dotenv = "0.15.0"
+anyhow = "1.0.100"
 

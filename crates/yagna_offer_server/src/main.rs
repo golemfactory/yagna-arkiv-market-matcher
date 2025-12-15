@@ -1,33 +1,18 @@
 pub mod model;
+pub mod offers;
+mod state;
 
 use crate::model::offer::attributes::OfferFlatAttributes;
 use crate::model::offer::base::GolemBaseOffer;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use chrono::{DateTime, Utc};
+use chrono::{Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use std::env;
 use std::sync::Arc;
 use structopt::StructOpt;
 pub use ya_client_model::NodeId;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct OfferObj {
-    offer: GolemBaseOffer,
-    pushed_at: DateTime<Utc>,
-    available: bool,
-    attributes: OfferFlatAttributes,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct Offers {
-    offer_map: BTreeMap<String, OfferObj>,
-}
-
-#[derive(Clone)]
-struct AppState {
-    lock: Arc<tokio::sync::Mutex<Offers>>,
-}
+use crate::offers::download_initial_offers;
+use crate::state::{AppState, OfferObj, Offers};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct FilterAttributes {
@@ -225,6 +210,7 @@ fn clean_old_offers_periodically(data: web::Data<AppState>) {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
     env::set_var(
         "RUST_LOG",
         env::var("RUST_LOG").unwrap_or("info".to_string()),
@@ -236,6 +222,8 @@ async fn main() -> std::io::Result<()> {
     let app_state = AppState {
         lock: Arc::new(tokio::sync::Mutex::new(Offers::default())),
     };
+    log::info!("Downloading initial offers...");
+    let _ = download_initial_offers(web::Data::new(app_state.clone())).await;
 
     clean_old_offers_periodically(web::Data::new(app_state.clone()));
 
