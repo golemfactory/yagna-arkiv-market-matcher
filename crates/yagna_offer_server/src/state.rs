@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ use crate::model::offer::base::GolemBaseOffer;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DemandObj {
     pub demand: DemandSubscription,
+    pub offer_list: VecDeque<String>,
 }
 
 

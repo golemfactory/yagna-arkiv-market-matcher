@@ -13,7 +13,7 @@ use std::sync::Arc;
 use structopt::StructOpt;
 pub use ya_client_model::NodeId;
 use crate::offers::download_initial_offers;
-use crate::rest::demand::{demand_cancel, demand_new, list_demands};
+use crate::rest::demand::{add_offer_to_demand, demand_cancel, demand_new, list_demands, take_offer_from_queue};
 use crate::state::{AppState, Demands, OfferObj, Offers};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -289,6 +289,22 @@ fn clean_old_offers_periodically(data: web::Data<AppState>) {
     });
 }
 
+fn clean_old_demands_periodically(data: web::Data<AppState>) {
+    let interval = tokio::time::Duration::from_secs(60);
+    let data_clone = data.clone();
+    tokio::spawn(async move {
+        let mut ticker = tokio::time::interval(interval);
+        loop {
+            ticker.tick().await;
+            let mut lock = data_clone.demands.lock().await;
+            let now = Utc::now();
+            lock.demand_map.retain(|_id, demand_obj| {
+                demand_obj.demand.expiration_ts.and_utc() > now
+            });
+        }
+    });
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
@@ -308,6 +324,7 @@ async fn main() -> std::io::Result<()> {
     let _ = download_initial_offers(web::Data::new(app_state.clone())).await;
 
     clean_old_offers_periodically(web::Data::new(app_state.clone()));
+    clean_old_demands_periodically(web::Data::new(app_state.clone()));
 
     log::info!(
         "Starting Offer Server at http://{}:{}",
@@ -336,6 +353,9 @@ async fn main() -> std::io::Result<()> {
             .route("/requestor/demand/new", web::post().to(demand_new))
             .route("/requestor/demand/cancel", web::post().to(demand_cancel))
             .route("/requestor/demands/list", web::get().to(list_demands))
+
+            .route("/requestor/demand/append-offer", web::post().to(add_offer_to_demand))
+            .route("/requestor/demand/take-from-queue", web::post().to(take_offer_from_queue))
 
 
     })
