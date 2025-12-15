@@ -247,7 +247,7 @@ pub async fn add_offer_to_demand(data: web::Data<AppState>, body: String) -> Htt
         }
     };
     if offer.requestor_id.is_some() {
-        return HttpResponse::Conflict().body("Offer is not available");
+        return HttpResponse::Conflict().body("Offer is already taken");
     }
     offer.requestor_id = Some(demand_obj.demand.node_id);
     demand_obj.offer_list.push_back(offer.offer.id.clone());
