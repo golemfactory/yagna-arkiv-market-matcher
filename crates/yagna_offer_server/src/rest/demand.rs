@@ -331,6 +331,7 @@ pub async fn local_pick_offer_to_demand(
 
     let mut lock = data.demands.lock().await;
     let mut offers_lock = data.lock.lock().await;
+    let mut given_lock = data.offers_given_to_node.lock().await;
 
     let get_demand = match lock.demand_map.contains_key(&demand_id) {
         true => lock.demand_map.get_mut(&demand_id),
@@ -376,17 +377,49 @@ pub async fn local_pick_offer_to_demand(
 
     offer.requestor_id = Some(demand_obj.demand.node_id);
     demand_obj.offer_list.push_back(offer.offer.id.clone());
+    let val = given_lock
+        .get(&demand_obj.demand.node_id.to_string())
+        .cloned();
+    match val {
+        Some(count) => {
+            given_lock.insert(demand_obj.demand.node_id.to_string(), count + 1);
+        }
+        None => {
+            given_lock.insert(demand_obj.demand.node_id.to_string(), 1);
+        }
+    }
     Ok(())
 }
 
 pub async fn pick_offers_for_all_demands(data: web::Data<AppState>) {
-    let demand_ids: Vec<String> = {
+    let demands: Vec<DemandObj> = {
         let lock = data.demands.lock().await;
-        lock.demand_map.keys().cloned().collect()
+        lock.demand_map.values().cloned().collect()
     };
 
-    for demand_id in demand_ids {
-        let pick_offer = PickOfferToDemand { demand_id };
+    let mut sort_by_given = Vec::new();
+    {
+        let lock = data.offers_given_to_node.lock().await;
+        for demand in demands.iter() {
+            if let Some(count) = lock.get(&demand.demand.node_id.to_string()) {
+                sort_by_given.push((demand.demand.id.clone(), *count));
+            } else {
+                sort_by_given.push((demand.demand.id.clone(), 0));
+            }
+        }
+    }
+
+    sort_by_given.sort_by_key(|k| k.1);
+
+    if let Some(pair) = sort_by_given.first() {
+        let pick_offer = PickOfferToDemand {
+            demand_id: pair.0.clone(),
+        };
+        log::info!(
+            "Picking offer for node {}, that already received: {} offers",
+            pair.0,
+            pair.1
+        );
         match local_pick_offer_to_demand(data.clone(), pick_offer).await {
             Ok(_) => {}
             Err(e) => {

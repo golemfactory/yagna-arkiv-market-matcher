@@ -35,4 +35,5 @@ pub struct Demands {
 pub struct AppState {
     pub lock: Arc<tokio::sync::Mutex<Offers>>,
     pub demands: Arc<tokio::sync::Mutex<Demands>>,
+    pub offers_given_to_node: Arc<tokio::sync::Mutex<BTreeMap<String, u64>>>,
 }

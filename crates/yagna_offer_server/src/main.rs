@@ -277,6 +277,7 @@ async fn main() -> std::io::Result<()> {
     let app_state = AppState {
         lock: Arc::new(tokio::sync::Mutex::new(Offers::default())),
         demands: Arc::new(tokio::sync::Mutex::new(Demands::default())),
+        offers_given_to_node: Arc::new(Default::default()),
     };
     log::info!("Downloading initial offers...");
 
