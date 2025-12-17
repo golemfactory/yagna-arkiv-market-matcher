@@ -429,12 +429,12 @@ pub async fn local_pick_offer_to_demand(
     if perf_start.elapsed().as_secs_f64() > 0.01 {
         log::warn!(
             "Pick offer took too long: {:.2} ms",
-            perf_start.elapsed().as_secs_f64() / 1000.0
+            perf_start.elapsed().as_secs_f64() * 1000.0
         );
     } else {
         log::debug!(
             "Pick offer took: {:.2} ms",
-            perf_start.elapsed().as_secs_f64() / 1000.0
+            perf_start.elapsed().as_secs_f64() * 1000.0
         );
     }
     Ok(true)
