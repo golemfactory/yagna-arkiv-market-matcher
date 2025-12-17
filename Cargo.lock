@@ -958,7 +958,7 @@ dependencies = [
 
 [[package]]
 name = "offer_processor"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "actix-web",
  "dotenv",
@@ -2088,7 +2088,7 @@ dependencies = [
 
 [[package]]
 name = "yagna-offer-server"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "actix-cors",
  "actix-web",

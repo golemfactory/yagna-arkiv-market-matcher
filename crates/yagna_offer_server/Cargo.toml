@@ -5,7 +5,7 @@ edition = "2021"
 name = "yagna-offer-server"
 license = "MIT"
 repository = "https://github.com/scx1332/"
-version = "0.5.1"
+version = "0.5.2"
 
 [dependencies]
 actix-cors = { workspace = true }

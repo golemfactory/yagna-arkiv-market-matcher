@@ -9,9 +9,9 @@ path = "src/main.rs"
 
 [package]
 name = "offer_processor"
-description = "Payment processor for ERC20 tokens"
+description = "Offer server for Golem Yagna"
 authors = ["Sieciech Czajka <sieciech.czajka@golem.network>"]
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 license = "MIT"
 
