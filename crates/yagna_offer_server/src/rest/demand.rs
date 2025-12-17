@@ -2,10 +2,12 @@ use crate::model::demand::base::{DemandCancellation, DemandSubscription};
 use crate::state::{AppState, DemandObj};
 use actix_web::{web, HttpResponse};
 use anyhow::bail;
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use std::ops::Sub;
 use std::str::FromStr;
+use std::time::Instant;
 use ya_client_model::NodeId;
 
 pub async fn list_demands(data: web::Data<AppState>) -> HttpResponse {
@@ -327,67 +329,83 @@ pub async fn local_pick_offer_to_demand(
     data: web::Data<AppState>,
     pick_offer_to_demand: PickOfferToDemand,
 ) -> anyhow::Result<()> {
-    let demand_id = pick_offer_to_demand.demand_id;
+    let perf_start = Instant::now();
+    {
+        let demand_id = pick_offer_to_demand.demand_id;
 
-    let mut lock = data.demands.lock().await;
-    let mut offers_lock = data.lock.lock().await;
-    let mut given_lock = data.offers_given_to_node.lock().await;
+        let mut lock = data.demands.lock().await;
+        let mut offers_lock = data.lock.lock().await;
+        let mut given_lock = data.offers_given_to_node.lock().await;
 
-    let get_demand = match lock.demand_map.contains_key(&demand_id) {
-        true => lock.demand_map.get_mut(&demand_id),
-        false => {
-            let node_id = match NodeId::from_str(&demand_id) {
-                Ok(id) => id,
-                Err(_) => {
-                    bail!("Invalid offer ID format or not found");
+        let get_demand = match lock.demand_map.contains_key(&demand_id) {
+            true => lock.demand_map.get_mut(&demand_id),
+            false => {
+                let node_id = match NodeId::from_str(&demand_id) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        bail!("Invalid offer ID format or not found");
+                    }
+                };
+                let mut get_demand: Option<&mut DemandObj> = None;
+                for (_, v) in lock.demand_map.iter_mut() {
+                    if v.demand.node_id == node_id {
+                        get_demand = Some(v);
+                        break;
+                    }
                 }
-            };
-            let mut get_demand: Option<&mut DemandObj> = None;
-            for (_, v) in lock.demand_map.iter_mut() {
-                if v.demand.node_id == node_id {
-                    get_demand = Some(v);
-                    break;
+                get_demand
+            }
+        };
+
+        let demand_obj = match get_demand {
+            Some(demand) => demand,
+            None => {
+                bail!("Demand not found");
+            }
+        };
+        // most recent, unexpired, and unassigned offer from the collection.
+        // The use of newest_one as a baseline timestamp ensures that only the most recent valid
+        // offer is chosen during the iteration.
+        let mut selected_offer_id = None;
+        let mut newest_one = Utc::now().sub(chrono::Duration::days(365 * 100));
+        for offer_pair in offers_lock.offer_map.iter_mut() {
+            let offer = offer_pair.1;
+            if offer.offer.expiration.naive_utc() < Utc::now().naive_utc() {
+                continue;
+            }
+            if offer.requestor_id.is_none() {
+                if offer.offer.timestamp > newest_one && offer.offer.timestamp < Utc::now() {
+                    newest_one = offer.offer.timestamp;
+                    selected_offer_id = Some(offer);
                 }
             }
-            get_demand
         }
-    };
 
-    let demand_obj = match get_demand {
-        Some(demand) => demand,
-        None => {
-            bail!("Demand not found");
-        }
-    };
-    let mut selected_offer_id = None;
-    for offer_pair in offers_lock.offer_map.iter_mut() {
-        let offer = offer_pair.1;
-        if offer.requestor_id.is_none() {
-            selected_offer_id = Some(offer);
-            break;
+        let offer = match selected_offer_id {
+            Some(offer) => offer,
+            None => {
+                bail!("No available offers found");
+            }
+        };
+
+        offer.requestor_id = Some(demand_obj.demand.node_id);
+        demand_obj.offer_list.push_back(offer.offer.id.clone());
+        let val = given_lock
+            .get(&demand_obj.demand.node_id.to_string())
+            .cloned();
+        match val {
+            Some(count) => {
+                given_lock.insert(demand_obj.demand.node_id.to_string(), count + 1);
+            }
+            None => {
+                given_lock.insert(demand_obj.demand.node_id.to_string(), 1);
+            }
         }
     }
-
-    let offer = match selected_offer_id {
-        Some(offer) => offer,
-        None => {
-            bail!("No available offers found");
-        }
-    };
-
-    offer.requestor_id = Some(demand_obj.demand.node_id);
-    demand_obj.offer_list.push_back(offer.offer.id.clone());
-    let val = given_lock
-        .get(&demand_obj.demand.node_id.to_string())
-        .cloned();
-    match val {
-        Some(count) => {
-            given_lock.insert(demand_obj.demand.node_id.to_string(), count + 1);
-        }
-        None => {
-            given_lock.insert(demand_obj.demand.node_id.to_string(), 1);
-        }
-    }
+    log::info!(
+        "Pick offer took: {:.2} ms",
+        perf_start.elapsed().as_secs_f64() / 1000.0
+    );
     Ok(())
 }
 
