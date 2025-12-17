@@ -328,7 +328,7 @@ pub async fn pick_offer_to_demand(data: web::Data<AppState>, body: String) -> Ht
 pub async fn local_pick_offer_to_demand(
     data: web::Data<AppState>,
     pick_offer_to_demand: PickOfferToDemand,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     let perf_start = Instant::now();
     {
         let demand_id = pick_offer_to_demand.demand_id;
@@ -371,20 +371,24 @@ pub async fn local_pick_offer_to_demand(
         for offer_pair in offers_lock.offer_map.iter_mut() {
             let offer = offer_pair.1;
             if offer.offer.expiration.naive_utc() < Utc::now().naive_utc() {
+                // expired
                 continue;
             }
-            if offer.requestor_id.is_none() {
-                if offer.offer.timestamp > newest_one && offer.offer.timestamp < Utc::now() {
-                    newest_one = offer.offer.timestamp;
-                    selected_offer_id = Some(offer);
-                }
+            if offer.requestor_id.is_some() {
+                // already assigned
+                continue;
+            }
+            if offer.offer.timestamp > newest_one && offer.offer.timestamp < Utc::now() {
+                // new good candidate
+                newest_one = offer.offer.timestamp;
+                selected_offer_id = Some(offer);
             }
         }
 
         let offer = match selected_offer_id {
             Some(offer) => offer,
             None => {
-                bail!("No available offers found");
+                return Ok(false);
             }
         };
 
@@ -402,11 +406,18 @@ pub async fn local_pick_offer_to_demand(
             }
         }
     }
-    log::info!(
-        "Pick offer took: {:.2} ms",
-        perf_start.elapsed().as_secs_f64() / 1000.0
-    );
-    Ok(())
+    if perf_start.elapsed().as_secs_f64() > 0.01 {
+        log::warn!(
+            "Pick offer took too long: {:.2} ms",
+            perf_start.elapsed().as_secs_f64() / 1000.0
+        );
+    } else {
+        log::debug!(
+            "Pick offer took: {:.2} ms",
+            perf_start.elapsed().as_secs_f64() / 1000.0
+        );
+    }
+    Ok(true)
 }
 
 pub async fn pick_offers_for_all_demands(data: web::Data<AppState>) {
@@ -429,17 +440,33 @@ pub async fn pick_offers_for_all_demands(data: web::Data<AppState>) {
 
     sort_by_given.sort_by_key(|k| k.1);
 
+    let mut no_picked_offers = 0;
+    const LOG_EVERY: i32 = 10;
     if let Some(pair) = sort_by_given.first() {
         let pick_offer = PickOfferToDemand {
             demand_id: pair.0.clone(),
         };
-        log::info!(
+        log::debug!(
             "Picking offer for node {}, that already received: {} offers",
             pair.0,
             pair.1
         );
+        if no_picked_offers % LOG_EVERY == 0 {
+            log::info!(
+                "Picked offers for {} demands so far, currently at node {} that received {} offers",
+                no_picked_offers,
+                pair.0,
+                pair.1
+            );
+        }
         match local_pick_offer_to_demand(data.clone(), pick_offer).await {
-            Ok(_) => {}
+            Ok(found) => {
+                if !found {
+                    log::debug!("No available offers found to pick for demand {}", pair.0);
+                } else {
+                    no_picked_offers += 1;
+                }
+            }
             Err(e) => {
                 log::warn!("Failed to pick offer for demand: {}", e);
             }
