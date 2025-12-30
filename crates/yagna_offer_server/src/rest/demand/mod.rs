@@ -104,7 +104,7 @@ pub async fn pick_offers_for_all_demands(data: web::Data<AppState>) {
             );
             LAST_LOG_TIME.store(current_time, std::sync::atomic::Ordering::SeqCst);
         }
-        match local_pick_offer_to_demand(data.clone(), pick_offer).await {
+        match local_pick_offer_to_demand(data.clone(), pick_offer, Some(net_selected)).await {
             Ok(found) => {
                 if !found {
                     log::debug!("No available offers found to pick for demand {}", pair.0);

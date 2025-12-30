@@ -100,6 +100,7 @@ pub async fn pick_offer_to_demand(data: web::Data<AppState>, body: String) -> Ht
 pub async fn local_pick_offer_to_demand(
     data: web::Data<AppState>,
     pick_offer_to_demand: PickOfferToDemand,
+    central_net_filter: Option<String>,
 ) -> anyhow::Result<bool> {
     let perf_start = Instant::now();
     {
@@ -150,6 +151,18 @@ pub async fn local_pick_offer_to_demand(
                 // already assigned
                 continue;
             }
+            let name_group = offer
+                .attributes
+                .node_name
+                .split("-")
+                .next()
+                .unwrap_or("N/A");
+            if let Some(central_net_filter) = central_net_filter.as_ref() {
+                if !central_net_filter.contains(name_group) {
+                    continue;
+                }
+            }
+
             if offer.offer.timestamp > newest_one && offer.offer.timestamp < Utc::now() {
                 // new good candidate
                 newest_one = offer.offer.timestamp;
