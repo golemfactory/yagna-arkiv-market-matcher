@@ -1,6 +1,7 @@
 set -x
 
 ./start_router.sh &
+./start_matcher.sh &
 
 sleep 2
 
