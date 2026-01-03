@@ -22,6 +22,6 @@ jobs:
 
       - name: Run integration tests
         run: |
-          sleep 1
+          (cd integration && /bin/bash start_and_detach_all.sh)
           
           
