@@ -1,6 +1,7 @@
 name: Integration tests
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
@@ -39,4 +40,8 @@ jobs:
         run: |
           (cd integration && /bin/bash start_and_detach_all.sh)
           
+      - name: Run integration tests
+        run: |
+          sleep 30
+          (cd integration && /bin/bash show_rentals.sh)
           

@@ -18,4 +18,4 @@ sleep 10
 /bin/bash start_provider.sh &
 
 # Start vanity service
-/bin/bash start_vanity.sh
+/bin/bash start_vanity.sh &
