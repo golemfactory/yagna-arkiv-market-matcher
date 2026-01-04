@@ -2,4 +2,4 @@
 
 set -x
 
-../venv/bin/python count_rentals.py
+./venv/bin/python count_rentals.py
