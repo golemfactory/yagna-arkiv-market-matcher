@@ -21,7 +21,7 @@ git clone git@github.com:salad-x-golem/node-deployer.git
 git clone git@github.com:salad-x-golem/req-deployer.git
 (cd req-deployer && git clean -fdx && git reset --hard && git checkout main && git pull)
 
-(cd node-deployer && ../venv/bin/python keys.py 1)
+(cd node-deployer && ../venv/bin/python keys.py 10)
 (cd node-deployer && mkdir "${MACHINE_PROV}_keys" && mv generated_keys/keys.txt "${MACHINE_PROV}_keys/${MACHINE_PROV}.keys" )
 (cd node-deployer && printf "NODE_PREFIX=%s\nNODE_SECRET=%s\nNO_SERVICES=true\nYAGNA_VERSION=${YAGNA_VERSION}\n" "${MACHINE_PROV}" "${MACHINE_PROV_SECRET}" > .env )
 (cd node-deployer && ../venv/bin/python bootstrap.py)
