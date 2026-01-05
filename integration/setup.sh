@@ -15,7 +15,7 @@ MACHINE_PROV="upper"
 MACHINE_REQ="lower"
 MACHINE_PROV_SECRET="abc123"
 MACHINE_REQ_SECRET="bca321"
-YAGNA_VERSION="pre-rel-v0.17.6-preview.offers.3"
+YAGNA_VERSION="pre-rel-v0.17.6-preview.noarkiv.13"
 
 set -x
 

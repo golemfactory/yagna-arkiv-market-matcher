@@ -49,6 +49,10 @@ jobs:
           sleep 30
           (cd integration && ./show_rentals.sh "${{ matrix.size }}")
 
+      - name: Show offers
+        run: |
+          curl http://127.0.0.1:15155/offers/list | jq
+
       - name: Kill services
         if: always()
         run: |

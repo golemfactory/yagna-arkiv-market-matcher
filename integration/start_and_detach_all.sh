@@ -15,8 +15,8 @@ set -x
 
 ./start_router.sh &
 
-# ./build_matcher.sh
-# ./start_matcher.sh &
+./build_matcher.sh
+./start_matcher.sh &
 
 sleep 2
 
