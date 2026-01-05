@@ -157,11 +157,11 @@ pub async fn local_pick_offer_to_demand(
                 .split("-")
                 .next()
                 .unwrap_or("N/A");
-            if let Some(central_net_filter) = central_net_filter.as_ref() {
+            /*if let Some(central_net_filter) = central_net_filter.as_ref() {
                 if !central_net_filter.contains(name_group) {
                     continue;
                 }
-            }
+            }*/
 
             if offer.offer.timestamp > newest_one && offer.offer.timestamp < Utc::now() {
                 // new good candidate
