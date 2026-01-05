@@ -4,7 +4,7 @@ NUMBER_OF_NODES=$1
 
 /bin/bash start_router.sh &
 
-/bin/bash build_matcher.sh
+# /bin/bash build_matcher.sh
 # /bin/bash start_matcher.sh &
 
 sleep 2
