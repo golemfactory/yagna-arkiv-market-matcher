@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         size: [10, 20, 30]
+        fail-fast: false
 
     steps:
       - name: Checkout
