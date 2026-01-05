@@ -27,7 +27,7 @@ sleep 2
 sleep 10
 
 # Start provider
-/bin/bash start_provider.sh "${NUMBER_OF_NODES}"
+/bin/bash start_provider.sh "${NUMBER_OF_NODES}" &
 
 # Start vanity service
 /bin/bash start_vanity.sh &
