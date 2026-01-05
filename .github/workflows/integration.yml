@@ -50,6 +50,7 @@ jobs:
           (cd integration && ./show_rentals.sh "${{ matrix.size }}")
 
       - name: Show offers
+        if: always()
         run: |
           curl http://127.0.0.1:15155/offers/list | jq
 
