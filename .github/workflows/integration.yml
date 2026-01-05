@@ -63,5 +63,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: requestor-${{ matrix.size }}
-          path: 'integration/requestor.tar.gz'
+          name: all-logs-${{ matrix.size }}
+          path: 'integration/all-logs.tar.gz'
