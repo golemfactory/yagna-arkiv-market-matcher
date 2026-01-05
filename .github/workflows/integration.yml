@@ -54,6 +54,11 @@ jobs:
         run: |
           curl http://127.0.0.1:15155/offers/list | jq
 
+      - name: Show demands
+        if: always()
+        run: |
+          curl http://127.0.0.1:15155/requestor/demands/list | jq
+
       - name: Kill services
         if: always()
         run: |
