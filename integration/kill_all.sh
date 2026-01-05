@@ -19,3 +19,5 @@ for i in $(seq 0 "$end"); do
   pkill -9 vanity-lower-"$i"
   pkill -9 yagna-lower-"$i"
 done
+
+pkill -9 router-upper
