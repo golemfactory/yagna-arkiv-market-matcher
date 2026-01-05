@@ -38,13 +38,30 @@ jobs:
 
       - name: Setup integration tests
         run: |
-          (cd integration && /bin/bash setup.sh "${{ matrix.size }}")
+          (cd integration && ./setup.sh "${{ matrix.size }}")
 
       - name: Start services
         run: |
-          (cd integration && /bin/bash start_and_detach_all.sh "${{ matrix.size }}")
+          (cd integration && ./start_and_detach_all.sh "${{ matrix.size }}")
 
       - name: Check rentals
         run: |
           sleep 30
-          (cd integration && /bin/bash show_rentals.sh "${{ matrix.size }}")
+          (cd integration && ./show_rentals.sh "${{ matrix.size }}")
+
+      - name: Kill services
+        if: always()
+        run: |
+            (cd integration && ./kill_all.sh "${{ matrix.size }}")
+
+      - name: Logging
+        if: always()
+        run: |
+            (cd integration && ./collect_logs.sh "${{ matrix.size }}")
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: requestor-${{ matrix.size }}
+          path: 'requestor.tar.gz'
