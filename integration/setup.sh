@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 if [ -z "$1" ]; then
   echo "usage: $0 N"
@@ -17,6 +16,8 @@ MACHINE_REQ="lower"
 MACHINE_PROV_SECRET="abc123"
 MACHINE_REQ_SECRET="bca321"
 YAGNA_VERSION="v0.17.6"
+
+set -x
 
 # rm -fr venv
 # rm -fr node-deployer
