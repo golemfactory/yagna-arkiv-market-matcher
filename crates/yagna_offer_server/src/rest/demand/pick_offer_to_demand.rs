@@ -159,10 +159,10 @@ pub async fn local_pick_offer_to_demand(
                 .unwrap_or("N/A");
 
             if let Some(central_net_filter) = central_net_filter.as_ref() {
-                if !central_net_filter.contains("127.0.0.1") {
-                    if !central_net_filter.contains(name_group) {
-                        continue;
-                    }
+                if !central_net_filter.contains("127.0.0.1")
+                    && !central_net_filter.contains(name_group)
+                {
+                    continue;
                 }
             }
 
