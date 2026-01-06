@@ -46,7 +46,7 @@ jobs:
 
       - name: Setup providers
         run: |
-          (cd integration && ./setup_provider.sh "${{ matrix.size }}")
+          (cd integration && ./setup_provider.sh 25)
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
           CENTRAL_NET_HOST: "polygongas.org:6999"
@@ -54,7 +54,7 @@ jobs:
 
       - name: Start providers
         run: |
-          (cd integration && ./start_and_detach_provider.sh "${{ matrix.size }}")
+          (cd integration && ./start_and_detach_provider.sh 25)
 
       - name: Wait for other tests
         run: |
@@ -93,14 +93,14 @@ jobs:
 
       - name: Setup requestor
         run: |
-          (cd integration && ./setup_requestor.sh "${{ matrix.size }}")
+          (cd integration && ./setup_requestor.sh)
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
           CENTRAL_NET_HOSTS: "geode.arkiv-global.net:6999"
 
       - name: Start services
         run: |
-          (cd integration && ./start_and_detach_requestor.sh "${{ matrix.size }}")
+          (cd integration && ./start_and_detach_requestor.sh)
         env:
           PICK_OFFERS_INTERVAL_SECS: "0.1"
           OFFER_SOURCE_URL: "http://polygongas.org:11500/offers/list"
