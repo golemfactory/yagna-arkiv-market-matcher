@@ -40,6 +40,10 @@ jobs:
         run: |
           (cd integration && ./prepare_python.sh)
 
+      - name: Clean external offers
+        run: |
+          curl -X POST http://polygongas.org:11500/offers/clear
+
       - name: Setup providers
         run: |
           (cd integration && ./setup_provider.sh "${{ matrix.size }}")
