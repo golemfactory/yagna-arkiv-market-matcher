@@ -1,19 +1,19 @@
-name: Internal test
+name: External tests
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
-  integration:
-    name: Integration internal test
+  provider:
+    name: External test
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        size: [25, 40, 50]
+        size: [25]
 
     steps:
       - name: Checkout
@@ -45,16 +45,14 @@ jobs:
           (cd integration && ./setup_provider.sh "${{ matrix.size }}")
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
-
-      - name: Setup router
-        run: |
-          (cd integration && ./download_router.sh)
+          CENTRAL_NET_HOST: "polygongas.org:6999"
 
       - name: Setup requestor
         run: |
           (cd integration && ./setup_requestor.sh "${{ matrix.size }}")
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
+          CENTRAL_NET_HOSTS: "polygongas.org:6999"
 
       - name: Start services
         run: |
@@ -80,12 +78,12 @@ jobs:
       - name: Kill services
         if: always()
         run: |
-            (cd integration && ./kill_all.sh "${{ matrix.size }}")
+          (cd integration && ./kill_all.sh "${{ matrix.size }}")
 
       - name: Logging
         if: always()
         run: |
-            (cd integration && ./collect_logs.sh "${{ matrix.size }}")
+          (cd integration && ./collect_logs.sh "${{ matrix.size }}")
 
       - name: Upload logs
         if: always()
