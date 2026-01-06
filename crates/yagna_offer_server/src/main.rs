@@ -11,7 +11,7 @@ use crate::rest::demand::list_demands::list_demands;
 use crate::rest::demand::pick_offer_to_demand::pick_offer_to_demand;
 use crate::rest::demand::pick_offers_for_all_demands;
 use crate::rest::demand::take_offer_from_queue::take_offer_from_queue;
-use crate::rest::offer::clean_old_offers::clean_old_offers;
+use crate::rest::offer::clean_old_offers::{clean_old_offers, delete_all_offers};
 use crate::rest::offer::list_offers::{list_available_offers, list_offers, list_taken_offers};
 use crate::rest::offer::push_offer::push_offer;
 use crate::state::{AppState, Demands, Offers};
@@ -250,6 +250,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(actix_cors::Cors::permissive())
             .route("/provider/offer/new", web::post().to(push_offer))
             .route("/offers/list", web::get().to(list_offers))
+            .route("/offers/clear", web::post().to(delete_all_offers))
             .route("/offers/list/taken", web::get().to(list_taken_offers))
             .route(
                 "/offers/list/available",
