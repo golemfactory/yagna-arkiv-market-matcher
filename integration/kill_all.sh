@@ -14,10 +14,10 @@ fi
 set -x
 
 for i in $(seq 0 "$end"); do
-  pkill -9 yp-geode-"$i"
-  pkill -9 yagna-geode-"$i"
-  pkill -9 vanity-lower-"$i"
-  pkill -9 yagna-lower-"$i"
+  pkill -9 yp-geode-"$i" || true
+  pkill -9 yagna-geode-"$i" || true
+  pkill -9 vanity-lower-"$i" || true
+  pkill -9 yagna-lower-"$i" || true
 done
 
-pkill -9 router-geode
+pkill -9 router-geode || true
