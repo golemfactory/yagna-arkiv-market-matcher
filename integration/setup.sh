@@ -18,8 +18,7 @@ set -x
 # rm -fr req-deployer
 
 # Prepare Python environment
-python -m venv venv
-venv/bin/python -m pip install eth-account requests dotenv
+./prepare_python.sh
 
 ./setup_provider.sh "${NUMBER_OF_NODES}"
 

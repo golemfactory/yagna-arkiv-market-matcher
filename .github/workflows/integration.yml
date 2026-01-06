@@ -36,9 +36,19 @@ jobs:
       - name: Build
         run: cargo build -p yagna-offer-server
 
-      - name: Setup integration tests
+      - name: Prepare python venv
         run: |
-          (cd integration && ./setup.sh "${{ matrix.size }}")
+          (cd integration && ./prepare_python.sh)
+
+      - name: Setup providers
+        run: |
+          (cd integration && ./setup_provider.sh "${{ matrix.size }}")
+        env:
+          YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
+
+      - name: Setup requestor
+        run: |
+          (cd integration && ./setup_requestor.sh "${{ matrix.size }}")
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
 
