@@ -14,15 +14,10 @@ jobs:
           curl -X POST http://polygongas.org:11500/offers/clear
 
   provider:
-    name: External test
-    timeout-minutes: 10
+    name: Provider part
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: before
-
-    strategy:
-      fail-fast: false
-      matrix:
-        size: [25]
 
     steps:
       - name: Checkout
@@ -70,15 +65,10 @@ jobs:
           sleep 300
 
   requestor:
-    name: External test
-    timeout-minutes: 10
+    name: Requestor part
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: before
-
-    strategy:
-      fail-fast: false
-      matrix:
-        size: [25]
 
     steps:
       - name: Checkout
