@@ -14,5 +14,5 @@ fi
 set -x
 
 for i in $(seq 0 "$end"); do
-  (cd "node-deployer/services/upper-$i/yagna" && ./yp-upper-"$i" run >/dev/null 2>&1) &
+  (cd "node-deployer/services/geode-$i/yagna" && ./yp-geode-"$i" run >/dev/null 2>&1) &
 done

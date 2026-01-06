@@ -52,7 +52,7 @@ jobs:
           (cd integration && ./setup_requestor.sh "${{ matrix.size }}")
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
-          CENTRAL_NET_HOSTS: "polygongas.org:6999"
+          CENTRAL_NET_HOSTS: "geode.arkiv-global.net:6999"
 
       - name: Start services
         run: |
