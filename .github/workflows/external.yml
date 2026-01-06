@@ -5,10 +5,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  before:
+    name: Prepare external test environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete external offers (from previous runs)
+        run: |
+          curl -X POST http://polygongas.org:11500/offers/clear
+
   provider:
     name: External test
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    needs: before
 
     strategy:
       fail-fast: false
@@ -40,10 +49,6 @@ jobs:
         run: |
           (cd integration && ./prepare_python.sh)
 
-      - name: Clean external offers
-        run: |
-          curl -X POST http://polygongas.org:11500/offers/clear
-
       - name: Setup providers
         run: |
           (cd integration && ./setup_provider.sh "${{ matrix.size }}")
@@ -51,6 +56,54 @@ jobs:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
           CENTRAL_NET_HOST: "polygongas.org:6999"
           OFFER_SERVER: "http://polygongas.org:11500"
+
+      - name: Start services
+        run: |
+          (cd integration && ./start_and_detach_all.sh "${{ matrix.size }}")
+        env:
+          PICK_OFFERS_INTERVAL_SECS: "0.1"
+          OFFER_SOURCE_URL: "http://polygongas.org:11500/offers/list"
+          OFFER_MIRROR_SYNC_INTERVAL_SECS: "10"
+
+      - name: Check rentals
+        run: |
+          sleep 60
+
+  requestor:
+    name: External test
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs: before
+
+    strategy:
+      fail-fast: false
+      matrix:
+        size: [25]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Build
+        run: cargo build -p yagna-offer-server
+
+      - name: Prepare python venv
+        run: |
+          (cd integration && ./prepare_python.sh)
 
       - name: Setup requestor
         run: |
@@ -98,3 +151,4 @@ jobs:
         with:
           name: all-logs-${{ matrix.size }}
           path: 'integration/all-logs.tar.gz'
+
