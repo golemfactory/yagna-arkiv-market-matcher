@@ -35,12 +35,12 @@ git clone git@github.com:salad-x-golem/req-deployer.git
 
 (cd node-deployer && ../venv/bin/python keys.py "${NUMBER_OF_NODES}")
 (cd node-deployer && mkdir "${MACHINE_PROV}_keys" && mv generated_keys/keys.txt "${MACHINE_PROV}_keys/${MACHINE_PROV}.keys" )
-(cd node-deployer && printf "NODE_PREFIX=%s\nNODE_SECRET=%s\nNO_SERVICES=true\nYAGNA_VERSION=${YAGNA_VERSION}\n" "${MACHINE_PROV}" "${MACHINE_PROV_SECRET}" > .env )
+(cd node-deployer && printf "NODE_PREFIX=%s\nNODE_SECRET=%s\nNO_SERVICES=true\nYAGNA_VERSION=${YAGNA_VERSION}\nCENTRAL_NET_HOST=http://127.0.0.1:6976" "${MACHINE_PROV}" "${MACHINE_PROV_SECRET}" > .env )
 (cd node-deployer && ../venv/bin/python bootstrap.py)
 
 (cd req-deployer && ../venv/bin/python keys.py 1)
 (cd req-deployer && mkdir "${MACHINE_REQ}_keys" && mv generated_keys/keys.txt "${MACHINE_REQ}_keys/${MACHINE_REQ}.keys" )
-(cd req-deployer && printf "NODE_PREFIX=%s\nNODE_SECRET=%s\nNO_SERVICES=true\nYAGNA_VERSION=${YAGNA_VERSION}\n" "${MACHINE_REQ}" "${MACHINE_REQ_SECRET}" > .env )
+(cd req-deployer && printf "NODE_PREFIX=%s\nNODE_SECRET=%s\nNO_SERVICES=true\nYAGNA_VERSION=${YAGNA_VERSION}\nCENTRAL_NET_HOSTS=http://127.0.0.1:6976" "${MACHINE_REQ}" "${MACHINE_REQ_SECRET}" > .env )
 (cd req-deployer && ../venv/bin/python bootstrap.py)
 
 (cd node-deployer && ./setup-all.sh)
