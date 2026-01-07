@@ -27,7 +27,7 @@ jobs:
   provider:
     name: Provider part - ${{ github.event.inputs.nodes }} nodes
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: uj1
     needs: before
     strategy:
       fail-fast: false
@@ -102,7 +102,7 @@ jobs:
   requestor:
     name: Requestor part
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: uj1
     needs: before
     strategy:
       fail-fast: false
