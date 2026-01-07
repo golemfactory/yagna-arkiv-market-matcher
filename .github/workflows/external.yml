@@ -124,17 +124,17 @@ jobs:
       - name: Kill services
         if: always()
         run: |
-          (cd integration && ./kill_all.sh "${{ matrix.size }}")
+          (cd integration && ./kill_all.sh 25)
 
       - name: Logging
         if: always()
         run: |
-          (cd integration && ./collect_logs.sh "${{ matrix.size }}")
+          (cd integration && ./collect_logs.sh 25)
 
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: all-logs-${{ matrix.size }}
+          name: all-logs-25
           path: 'integration/all-logs.tar.gz'
 
