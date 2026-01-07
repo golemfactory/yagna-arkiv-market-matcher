@@ -164,7 +164,7 @@ pub async fn local_pick_offer_to_demand(
             let group = env::var("OFFER_GROUP").ok();
 
             if let Some(group) = group.as_ref() {
-                if !offer.attributes.node_name.contains(group) {
+                if !offer.attributes.node_name.contains((group.to_string() + "-").as_str()) {
                     continue;
                 }
             } else {
