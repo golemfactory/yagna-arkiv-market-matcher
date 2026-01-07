@@ -6,6 +6,8 @@ on:
 
 jobs:
   before:
+    concurrency:
+      group: external-tests
     name: Prepare external test environment
     runs-on: ubuntu-latest
     steps:
