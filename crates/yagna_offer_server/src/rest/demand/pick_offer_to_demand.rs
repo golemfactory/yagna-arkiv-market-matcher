@@ -3,6 +3,7 @@ use actix_web::{web, HttpResponse};
 use anyhow::bail;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::ops::Sub;
 use std::str::FromStr;
 use std::time::Instant;
@@ -158,11 +159,21 @@ pub async fn local_pick_offer_to_demand(
                 .next()
                 .unwrap_or("N/A");
 
-            if let Some(central_net_filter) = central_net_filter.as_ref() {
-                if !central_net_filter.contains("127.0.0.1")
-                    && !central_net_filter.contains(name_group)
-                {
+
+            //used in integration tests
+            let group = env::var("OFFER_GROUP").ok();
+
+            if let Some(group) = group.as_ref() {
+                if !offer.attributes.node_name.contains(group) {
                     continue;
+                }
+            } else {
+                if let Some(central_net_filter) = central_net_filter.as_ref() {
+                    if !central_net_filter.contains("127.0.0.1")
+                        && !central_net_filter.contains(name_group)
+                    {
+                        continue;
+                    }
                 }
             }
 

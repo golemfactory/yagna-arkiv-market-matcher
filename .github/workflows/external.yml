@@ -62,10 +62,13 @@ jobs:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
           CENTRAL_NET_HOST: "polygongas.org:6999"
           OFFER_SERVER: "http://polygongas.org:11500"
+          MACHINE_PROV: "github${{ matrix.provider_group }}"
 
       - name: Start providers
         run: |
           (cd integration && ./start_and_detach_provider.sh ${{ github.event.inputs.nodes }})
+        env:
+          MACHINE_PROV: "github${{ matrix.provider_group }}"
 
       - name: Wait for other tests
         run: |
@@ -137,6 +140,7 @@ jobs:
           PICK_OFFERS_INTERVAL_SECS: "0.1"
           OFFER_SOURCE_URL: "http://polygongas.org:11500/offers/list"
           OFFER_MIRROR_SYNC_INTERVAL_SECS: "10"
+          OFFER_GROUP: "github${{ matrix.requestor_group }}"
 
       - name: Check rentals
         run: |
