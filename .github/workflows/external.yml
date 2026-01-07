@@ -7,7 +7,6 @@ on:
 concurrency:
   group: external-tests
 
-
 jobs:
   before:
     name: Prepare external test environment
