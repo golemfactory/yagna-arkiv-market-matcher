@@ -60,7 +60,7 @@ jobs:
           (cd integration && ./setup_provider.sh ${{ github.event.inputs.nodes }})
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
-          CENTRAL_NET_HOST: "polygongas.org:6999"
+          CENTRAL_NET_HOST: "393479950594e7c676ba121033a677a1316f722460827e217c82d2b3@18.185.178.4:7464"
           OFFER_SERVER: "http://polygongas.org:11500"
           MACHINE_PROV: "github${{ matrix.provider_group }}"
 
@@ -135,7 +135,7 @@ jobs:
           (cd integration && ./setup_requestor.sh)
         env:
           YAGNA_VERSION: "pre-rel-v0.17.6-preview.noarkiv.14"
-          CENTRAL_NET_HOSTS: "geode.arkiv-global.net:6999"
+          CENTRAL_NET_HOSTS: "393479950594e7c676ba121033a677a1316f722460827e217c82d2b3@18.185.178.4:7464"
 
       - name: Start services
         run: |
