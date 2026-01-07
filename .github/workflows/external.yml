@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+concurrency:
+  group: external-tests
+
 jobs:
   before:
     name: Prepare external test environment
@@ -12,8 +15,6 @@ jobs:
       - name: Delete external offers (from previous runs)
         run: |
           curl -X POST http://polygongas.org:11500/offers/clear
-    concurrency:
-      group: external-tests
 
   provider:
     name: Provider part
