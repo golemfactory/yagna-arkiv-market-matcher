@@ -76,6 +76,10 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: before
+    strategy:
+      fail-fast: false
+      matrix:
+        requestor_group: [0, 1]
 
     steps:
       - name: Checkout
